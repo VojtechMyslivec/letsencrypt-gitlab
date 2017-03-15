@@ -34,6 +34,16 @@ gitlab_pages['cert'] = "/etc/letsencrypt/live/pages.example.cz/fullchain.pem"
 gitlab_pages['cert_key'] = "/etc/letsencrypt/live/pages.example.cz/privkey.pem"
 ```
 
+There is an [open issue](https://gitlab.com/gitlab-org/gitlab-pages/issues/10)
+for Gitlab *Pages with https*. Actually the `/dev/urandom` device is missing in Pages *chroot*.
+Workaround is to create it manually with:
+
+```sh
+chroot="/var/opt/gitlab/gitlab-rails/shared/pages"
+mkdir -p "$chroot/dev"
+mknod -m 666 "$chroot/dev/urandom" c 1 9
+```
+
 ## Cron job
 
 A suitable cron job for renewing certificate is
