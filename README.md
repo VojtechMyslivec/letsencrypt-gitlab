@@ -33,3 +33,11 @@ gitlab_pages['external_https'] = '2.3.4.5:443'
 gitlab_pages['cert'] = "/etc/letsencrypt/live/pages.example.cz/fullchain.pem"
 gitlab_pages['cert_key'] = "/etc/letsencrypt/live/pages.example.cz/privkey.pem"
 ```
+
+## Cron job
+
+A suitable cron job for renewing certificate is
+
+```cron
+0 5 * * * root /opt/letsencrypt-gitlab/letsencrypt_wrapper.sh warn
+```
