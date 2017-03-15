@@ -127,3 +127,59 @@ info "Restarting nginx" >&2
     exit 3
 }
 
+info "Stoping Pages"
+"$gitlab_sv" stop gitlab-pages > /dev/null || {
+    error "Failed to stop pages"
+    exit 3
+}
+
+info "Running dummy webserver"
+dummy_server_pidfile=$( mktemp )
+python3 -m http.server --bind "$pages_bind_ip" 80 &> /dev/null &
+echo "$!" > "$dummy_server_pidfile"
+
+sleep 2
+pgrep -P "$$" -F "$dummy_server_pidfile" python > /dev/null || {
+    error "Can not start dummy web server"
+    "$gitlab_sv" start gitlab-pages > /dev/null || {
+        error "Failed to start pages"
+        exit 3
+    }
+    exit 3
+}
+
+# obtain certificate for pages – via webroot method
+info "Obtaining Pages certificate" >&2
+"$letsencrypt" certonly \
+  $letsencrypt_extra_args \
+  --non-interactive \
+  --email "$email" --agree-tos \
+  --webroot --webroot-path "$webroot_path" \
+  --expand --domains "$pages_domains" || {
+    error "Cannnot obtain certificate for Pages domains." >&2
+    "$gitlab_sv" start gitlab-pages > /dev/null || {
+        error "Failed to start pages"
+        exit 3
+    }
+    exit 2
+}
+
+info "Stoping dummy webserver"
+pkill -P "$$" -F "$dummy_server_pidfile" python -term
+
+# in case it needs to be killed
+sleep 2
+pgrep -P "$$" -F "$dummy_server_pidfile" python > /dev/null && {
+    warning "Need to kill dummy webserver"
+    pkill -P "$$" -F "$dummy_server_pidfile" python -kill
+}
+
+rm "$dummy_server_pidfile" || {
+    warning "Can not remove temporary pidfile '$dummy_server_pidfile'"
+}
+
+info "Starting Pages" >&2
+"$gitlab_sv" start gitlab-pages > /dev/null || {
+    error "Failed to start pages"
+    exit 3
+}
