@@ -99,20 +99,6 @@ case "$log_level" in
 esac
 }
 
-obtain_gitlab_cert() {
-    # obtain certificate for gitlab – via webroot method
-    info "Obtaining Gitlab certificate" >&2
-    "$letsencrypt" certonly \
-      --non-interactive \
-      $letsencrypt_extra_args \
-      --email "$email" --agree-tos \
-      --webroot --webroot-path "$webroot_path" \
-      --expand --domains "$gitlab_domains" || {
-        error "Failed to obtain certificate for Gitlab domains" >&2
-        return 1
-    }
-}
-
 restart_nginx() {
     info "Restarting nginx" >&2
     "$gitlab_sv" restart nginx > /dev/null || {
@@ -120,7 +106,6 @@ restart_nginx() {
         return 1
     }
 }
-
 
 # Needs $1: start/stop
 pages_service() {
@@ -158,20 +143,6 @@ check_dummy_webserver() {
     }
 }
 
-obtain_pages_cert() {
-    # obtain certificate for pages – via webroot method
-    info "Obtaining Pages certificate" >&2
-    "$letsencrypt" certonly \
-      $letsencrypt_extra_args \
-      --non-interactive \
-      --email "$email" --agree-tos \
-      --webroot --webroot-path "$webroot_path" \
-      --expand --domains "$pages_domains" || {
-        error "Cannnot obtain certificate for Pages domains." >&2
-        return 1
-    }
-}
-
 stop_dummy_webserver() {
     info "Stoping dummy webserver"
     pkill -P "$$" -F "$dummy_server_pidfile" python -term
@@ -185,6 +156,42 @@ stop_dummy_webserver() {
 
     rm "$dummy_server_pidfile" || {
         warning "Can not remove temporary pidfile '$dummy_server_pidfile'"
+    }
+}
+
+
+# this function will run letsencrypt-auto with webroot method
+# needs csv of domains as $1 arg
+obtain_cert() {
+    [ -n "$1" ] || {
+        error "obtain_cert(): list of domains is needed as first argument"
+        return 1
+    }
+
+    # it will pass the return value
+    "$letsencrypt" certonly \
+      $letsencrypt_extra_args \
+      --non-interactive \
+      --email "$email" --agree-tos \
+      --webroot --webroot-path "$webroot_path" \
+      --expand --domains "$1"
+}
+
+obtain_gitlab_cert() {
+    # obtain certificate for gitlab – via webroot method
+    info "Obtaining Gitlab certificate" >&2
+    obtain_cert "$gitlab_domains" || {
+        error "Failed to obtain certificate for Gitlab domains" >&2
+        return 1
+    }
+}
+
+obtain_pages_cert() {
+    # obtain certificate for pages – via webroot method
+    info "Obtaining Pages certificate" >&2
+    obtain_cert "$pages_domains" || {
+        error "Cannnot obtain certificate for Pages domains." >&2
+        return 1
     }
 }
 
