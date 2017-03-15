@@ -100,25 +100,25 @@ esac
 }
 
 obtain_gitlab_cert() {
-# obtain certificate for gitlab – via webroot method
-info "Obtaining Gitlab certificate" >&2
-"$letsencrypt" certonly \
-  --non-interactive \
-  $letsencrypt_extra_args \
-  --email "$email" --agree-tos \
-  --webroot --webroot-path "$webroot_path" \
-  --expand --domains "$gitlab_domains" || {
-    error "Failed to obtain certificate for Gitlab domains" >&2
-    return 1
-}
+    # obtain certificate for gitlab – via webroot method
+    info "Obtaining Gitlab certificate" >&2
+    "$letsencrypt" certonly \
+      --non-interactive \
+      $letsencrypt_extra_args \
+      --email "$email" --agree-tos \
+      --webroot --webroot-path "$webroot_path" \
+      --expand --domains "$gitlab_domains" || {
+        error "Failed to obtain certificate for Gitlab domains" >&2
+        return 1
+    }
 }
 
 restart_nginx() {
-info "Restarting nginx" >&2
-"$gitlab_sv" restart nginx > /dev/null || {
-    error "Failed to restart nginx"
-    return 1
-}
+    info "Restarting nginx" >&2
+    "$gitlab_sv" restart nginx > /dev/null || {
+        error "Failed to restart nginx"
+        return 1
+    }
 }
 
 
@@ -140,52 +140,52 @@ pages_service() {
 }
 
 start_dummy_webserver() {
-info "Running dummy webserver"
-dummy_server_pidfile=$( mktemp )
-python3 -m http.server --bind "$pages_bind_ip" 80 &> /dev/null &
-echo "$!" > "$dummy_server_pidfile"
+    info "Running dummy webserver"
+    dummy_server_pidfile=$( mktemp )
+    python3 -m http.server --bind "$pages_bind_ip" 80 &> /dev/null &
+    echo "$!" > "$dummy_server_pidfile"
 }
 
 is_dummy_webserver_running() {
-pgrep -P "$$" -F "$dummy_server_pidfile" python > /dev/null
+    pgrep -P "$$" -F "$dummy_server_pidfile" python > /dev/null
 }
 
 check_dummy_webserver() {
-is_dummy_webserver_running || {
-    error "Can not start dummy web server"
-    pages_service start
-    return 1
-}
+    is_dummy_webserver_running || {
+        error "Can not start dummy web server"
+        pages_service start
+        return 1
+    }
 }
 
 obtain_pages_cert() {
-# obtain certificate for pages – via webroot method
-info "Obtaining Pages certificate" >&2
-"$letsencrypt" certonly \
-  $letsencrypt_extra_args \
-  --non-interactive \
-  --email "$email" --agree-tos \
-  --webroot --webroot-path "$webroot_path" \
-  --expand --domains "$pages_domains" || {
-    error "Cannnot obtain certificate for Pages domains." >&2
-    return 1
-}
+    # obtain certificate for pages – via webroot method
+    info "Obtaining Pages certificate" >&2
+    "$letsencrypt" certonly \
+      $letsencrypt_extra_args \
+      --non-interactive \
+      --email "$email" --agree-tos \
+      --webroot --webroot-path "$webroot_path" \
+      --expand --domains "$pages_domains" || {
+        error "Cannnot obtain certificate for Pages domains." >&2
+        return 1
+    }
 }
 
 stop_dummy_webserver() {
-info "Stoping dummy webserver"
-pkill -P "$$" -F "$dummy_server_pidfile" python -term
+    info "Stoping dummy webserver"
+    pkill -P "$$" -F "$dummy_server_pidfile" python -term
 
-# in case it needs to be killed
-sleep 2
-is_dummy_webserver_running && {
-    warning "Need to kill dummy webserver"
-    pkill -P "$$" -F "$dummy_server_pidfile" python -kill
-}
+    # in case it needs to be killed
+    sleep 2
+    is_dummy_webserver_running && {
+        warning "Need to kill dummy webserver"
+        pkill -P "$$" -F "$dummy_server_pidfile" python -kill
+    }
 
-rm "$dummy_server_pidfile" || {
-    warning "Can not remove temporary pidfile '$dummy_server_pidfile'"
-}
+    rm "$dummy_server_pidfile" || {
+        warning "Can not remove temporary pidfile '$dummy_server_pidfile'"
+    }
 }
 
 
