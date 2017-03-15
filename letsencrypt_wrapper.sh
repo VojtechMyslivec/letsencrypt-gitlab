@@ -213,12 +213,21 @@ usage "$@" || exit 1
 
 
 # obtain and deploy gitlab certificate -----------
+# this is handled with nginx custom configuration
+# by aliasing the /.well-known location
 obtain_gitlab_cert || exit 2
 
 restart_nginx || exit 3
 
 
 # obtain and deploy pages certificate ------------
+# pages uses go webserver which can not be configered
+# to alias /.well-known at the moment
+# so it is needed to use "our" dummy webserver with correct
+
+# letsencrypt-auto standalone is not used because it can
+# not be configured to listen only on specific IP address
+
 pages_service stop || exit 3
 
 start_dummy_webserver || exit 3
