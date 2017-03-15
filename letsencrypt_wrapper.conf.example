@@ -1,0 +1,10 @@
+## letsencrypt_wrapper.conf
+#
+# configuration parameters for letsencrypt_wrapper.sh
+
+# email for registration
+email="you@email.cz"
+# comma separated values of main Gitlab domain names
+gitlab_domains="git.example.cz"
+
+#letsencrypt_extra_args="--staging"
