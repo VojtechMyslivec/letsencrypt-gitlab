@@ -4,11 +4,17 @@
 
 # email for registration
 email="you@email.cz"
-# comma separated values of main Gitlab domain names
-gitlab_domains="git.example.cz"
+# bash array of main Gitlab domain names
+gitlab_domains=(
+    "git.example.cz"
+)
 
-# comma separated values of Pages domain names
-pages_domains="pages.example.cz,you.pages.example.cz,docs.you.cz"
+# bash array of Pages domain names
+pages_domains=(
+    "pages.example.cz"
+    "you.pages.example.cz"
+    "docs.you.cz"
+)
 
 # IP address where Pages listens
 pages_bind_ip="2.3.4.5"

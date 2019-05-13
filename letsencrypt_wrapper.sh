@@ -37,8 +37,8 @@ gitlab_sv="/opt/gitlab/embedded/bin/sv"
 # letsencrypt-auto tool
 letsencrypt="/opt/letsencrypt/letsencrypt-auto"
 # extra args for letsencrypt-auto
-# DANGEROUS! it will be expanded without quotes
-letsencrypt_extra_args=""
+# there needs to be at least something to use array expansion together with nounset
+letsencrypt_extra_args=('--non-interactive')
 
 # functions ======================================
 # messages ---------------------------------------
@@ -86,11 +86,11 @@ case "$log_level" in
         ;;
     "warn")
         log_level_i=1
-        letsencrypt_extra_args+=" --quiet"
+        letsencrypt_extra_args+=("--quiet")
         ;;
     "err")
         log_level_i=0
-        letsencrypt_extra_args+=" --quiet"
+        letsencrypt_extra_args+=("--quiet")
         ;;
     *)
         error "log_level can be set only to 'err','warn' or 'info'"
@@ -163,24 +163,27 @@ stop_dummy_webserver() {
 # this function will run letsencrypt-auto with webroot method
 # needs csv of domains as $1 arg
 obtain_cert() {
-    [ -n "$1" ] || {
-        error "obtain_cert(): list of domains is needed as first argument"
+    [ "$#" -ge 1 ] || {
+        error "obtain_cert(): list of domains is needed as arguments"
         return 1
     }
 
-    # it will pass the return value
-    "$letsencrypt" certonly \
-      $letsencrypt_extra_args \
-      --non-interactive \
-      --email "$email" --agree-tos \
-      --webroot --webroot-path "$webroot_path" \
-      --expand --domains "$1"
+    (
+        # to separate arguments with comma
+        IFS=,
+        # it will pass the return value
+        "$letsencrypt" certonly \
+                "${letsencrypt_extra_args[@]}" \
+                --email "$email" --agree-tos \
+                --webroot --webroot-path "$webroot_path" \
+                --expand --domains "$*" # domains as comma-separated list
+    )
 }
 
 obtain_gitlab_cert() {
     # obtain certificate for gitlab – via webroot method
     info "Obtaining Gitlab certificate" >&2
-    obtain_cert "$gitlab_domains" || {
+    obtain_cert "${gitlab_domains[@]}" || {
         error "Failed to obtain certificate for Gitlab domains" >&2
         return 1
     }
@@ -189,7 +192,7 @@ obtain_gitlab_cert() {
 obtain_pages_cert() {
     # obtain certificate for pages – via webroot method
     info "Obtaining Pages certificate" >&2
-    obtain_cert "$pages_domains" || {
+    obtain_cert "${pages_domains[@]}" || {
         error "Cannnot obtain certificate for Pages domains." >&2
         return 1
     }
