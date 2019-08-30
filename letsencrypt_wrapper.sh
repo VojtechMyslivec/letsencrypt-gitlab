@@ -13,7 +13,7 @@ SCRIPTDIR=${0%/*}
 
 USAGE="USAGE
     $SCRIPTNAME -h
-    $SCRIPTNAME [-qv]
+    $SCRIPTNAME [-fqv]
 
     This script will obtain and deploy certificates for Gitlab Pages
     with domain names specified in configuration file
@@ -22,12 +22,16 @@ USAGE="USAGE
 OPTIONS
     -h      Prints this message and exits
 
+    -f      Force renew the certificate
     -q      Quiet mode, suitable for cron (overrides '-v')
     -v      Verbose mode, useful for testing (overrides '-q')
     -t      Use staging Let's Encrypt URL; will issue not-trusted
             certificate, but useful for testing
 
 EXAMPLES
+    Issue the certificate afer configuration change
+        $SCRIPTNAME -fv
+
     Issue testing certificate in terminal
         $SCRIPTNAME -tv
 
@@ -37,6 +41,7 @@ EXAMPLES
 
 # default parameters -----------------------------
 VERBOSE='false'
+FORCE='false'
 DAYS='30'
 
 # gitlab services controller
@@ -72,11 +77,15 @@ error() {
 
 # script functions -------------------------------
 usage() {
-    while getopts ':hqtv' OPT; do
+    while getopts ':hfqtv' OPT; do
         case "$OPT" in
             h)
                 echo "$USAGE"
                 exit 0
+                ;;
+
+            f)
+                FORCE='true'
                 ;;
 
             q)
@@ -114,11 +123,14 @@ check_cert() {
     if ! [ -f "$path" -a -r "$path" ]; then
         info "Certificate does not exist. New cert will be deployed."
 
+    elif [ "$FORCE" == 'true' ]; then
+        info "Running in force mode, certificate will be renewed."
+
     elif ! openssl x509 -checkend $(( DAYS*24*60*60 )) -in "$path" &> /dev/null; then
         info "Certificate will expire in $DAYS, certificate will be renewed."
 
     else
-        info "Certificate will be valid for next $DAYS days, exiting."
+        info "Certificate will be valid for next $DAYS days, exiting (run with '-f' to force-renew)."
         exit 0
 
     fi
