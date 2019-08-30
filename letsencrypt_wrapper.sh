@@ -46,11 +46,10 @@ DAYS='30'
 
 # gitlab services controller
 gitlab_sv="/opt/gitlab/embedded/bin/sv"
-# letsencrypt-auto tool
-letsencrypt="/opt/letsencrypt/letsencrypt-auto"
-# extra args for letsencrypt-auto
+certbot="/opt/certbot/certbot-auto"
+# extra args for certbot-auto
 # there needs to be at least something to use array expansion together with nounset
-letsencrypt_extra_args=('--non-interactive')
+certbot_extra_args=('--non-interactive')
 
 # functions ======================================
 # messages ---------------------------------------
@@ -89,12 +88,12 @@ usage() {
                 ;;
 
             q)
-                letsencrypt_extra_args+=("--quiet")
+                certbot_extra_args+=("--quiet")
                 VERBOSE='false'
                 ;;
 
             t)
-                letsencrypt_extra_args+=("--staging")
+                certbot_extra_args+=("--staging")
                 ;;
 
             v)
@@ -155,7 +154,7 @@ pages_service() {
 }
 
 
-# this function will run letsencrypt-auto in standalone method
+# this function will run certbot-auto in standalone mode
 # needs list of domains as arguments
 obtain_cert() {
     [ "$#" -ge 1 ] || {
@@ -166,10 +165,11 @@ obtain_cert() {
     (
         # to separate arguments with comma
         IFS=,
-        "$letsencrypt" certonly \
+        "$certbot" certonly \
                 --standalone --http-01-address "$pages_bind_ip" \
-                "${letsencrypt_extra_args[@]}" \
-                --email "$email" --agree-tos \
+                --non-interactive --agree-tos --force-renew \
+                "${certbot_extra_args[@]}" \
+                --email "$email" \
                 --expand --domains "$*" # domains as comma-separated list
     )
 }
