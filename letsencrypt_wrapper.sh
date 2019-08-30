@@ -66,37 +66,37 @@ error() {
 
 # script functions -------------------------------
 usage() {
-[ $# -le 1 ] || {
-    echo "$USAGE" >&2
-    exit 1
-}
-
-if [ $# -ge 1 ]; then
-    [ "$1" == "-h" -o "$1" == "--help" ] && {
-        echo "$USAGE"
-        exit 0
-    }
-    log_level="$1"
-fi
-
-# log_level handling
-case "$log_level" in
-    "info")
-        log_level_i=2
-        ;;
-    "warn")
-        log_level_i=1
-        letsencrypt_extra_args+=("--quiet")
-        ;;
-    "err")
-        log_level_i=0
-        letsencrypt_extra_args+=("--quiet")
-        ;;
-    *)
-        error "log_level can be set only to 'err','warn' or 'info'"
+    [ $# -le 1 ] || {
+        echo "$USAGE" >&2
         exit 1
-        ;;
-esac
+    }
+
+    if [ $# -ge 1 ]; then
+        [ "$1" == "-h" -o "$1" == "--help" ] && {
+            echo "$USAGE"
+            exit 0
+        }
+        log_level="$1"
+    fi
+
+    # log_level handling
+    case "$log_level" in
+        "info")
+            log_level_i=2
+            ;;
+        "warn")
+            log_level_i=1
+            letsencrypt_extra_args+=("--quiet")
+            ;;
+        "err")
+            log_level_i=0
+            letsencrypt_extra_args+=("--quiet")
+            ;;
+        *)
+            error "log_level can be set only to 'err','warn' or 'info'"
+            exit 1
+            ;;
+    esac
 }
 
 
