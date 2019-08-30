@@ -43,6 +43,7 @@ EXAMPLES
 VERBOSE='false'
 FORCE='false'
 DAYS='30'
+CERT_NAME='gl-pages'
 
 # gitlab services controller
 gitlab_sv="/opt/gitlab/embedded/bin/sv"
@@ -168,9 +169,10 @@ obtain_cert() {
         "$certbot" certonly \
                 --standalone --http-01-address "$pages_bind_ip" \
                 --non-interactive --agree-tos --force-renew \
+                --cert-name "$CERT_NAME" \
                 "${certbot_extra_args[@]}" \
                 --email "$email" \
-                --expand --domains "$*" # domains as comma-separated list
+                --domains "$*" # domains as comma-separated list
     )
 }
 
@@ -194,7 +196,7 @@ source "$SCRIPTDIR/letsencrypt_wrapper.conf" || {
 usage "$@" || exit 1
 
 # check cert expire dates
-check_cert "/etc/letsencrypt/live/${pages_domains[0]}/cert.pem"
+check_cert "/etc/letsencrypt/live/$CERT_NAME/cert.pem"
 
 # obtain and deploy pages certificate ------------
 # Pages' webserver can not be configured to alias /.well-known to use webroot
