@@ -5,7 +5,6 @@ A wrapper to obtain letsencrypt certificate for Gitlab Pages
 Needed tools:
 - [gitlab](https://about.gitlab.com/downloads/)
 - [certbot](https://github.com/certbot/certbot)
-- [python3](https://www.python.org/)
 
 
 ## Gitlab Pages certificate

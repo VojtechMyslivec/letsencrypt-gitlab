@@ -30,8 +30,6 @@ USAGE="USAGE
 # default parameters -----------------------------
 log_level="info"
 
-# path to a webroot (must be mapped in gitlab.rb by nginx custom config)
-webroot_path="/var/www/letsencrypt"
 # gitlab services controller
 gitlab_sv="/opt/gitlab/embedded/bin/sv"
 # letsencrypt-auto tool
@@ -117,44 +115,9 @@ pages_service() {
     }
 }
 
-start_dummy_webserver() {
-    info "Running dummy webserver"
-    dummy_server_pidfile=$( mktemp )
-    python3 -m http.server --bind "$pages_bind_ip" 80 &> /dev/null &
-    echo "$!" > "$dummy_server_pidfile"
-}
 
-is_dummy_webserver_running() {
-    pgrep -P "$$" -F "$dummy_server_pidfile" python > /dev/null
-}
-
-check_dummy_webserver() {
-    is_dummy_webserver_running || {
-        error "Can not start dummy web server"
-        pages_service start
-        return 1
-    }
-}
-
-stop_dummy_webserver() {
-    info "Stoping dummy webserver"
-    pkill -P "$$" -F "$dummy_server_pidfile" python -term
-
-    # in case it needs to be killed
-    sleep 2
-    is_dummy_webserver_running && {
-        warning "Need to kill dummy webserver"
-        pkill -P "$$" -F "$dummy_server_pidfile" python -kill
-    }
-
-    rm "$dummy_server_pidfile" || {
-        warning "Can not remove temporary pidfile '$dummy_server_pidfile'"
-    }
-}
-
-
-# this function will run letsencrypt-auto with webroot method
-# needs csv of domains as $1 arg
+# this function will run letsencrypt-auto in standalone method
+# needs list of domains as arguments
 obtain_cert() {
     [ "$#" -ge 1 ] || {
         error "obtain_cert(): list of domains is needed as arguments"
@@ -164,11 +127,10 @@ obtain_cert() {
     (
         # to separate arguments with comma
         IFS=,
-        # it will pass the return value
         "$letsencrypt" certonly \
+                --standalone --http-01-address "$pages_bind_ip" \
                 "${letsencrypt_extra_args[@]}" \
                 --email "$email" --agree-tos \
-                --webroot --webroot-path "$webroot_path" \
                 --expand --domains "$*" # domains as comma-separated list
     )
 }
@@ -185,13 +147,6 @@ obtain_pages_cert() {
 
 
 # main ===========================================
-
-# needed for dummy webserver
-cd "$webroot_path" || {
-    error "Can not change directory to '$webroot_path'"
-    exit 1
-}
-
 source "$SCRIPTDIR/letsencrypt_wrapper.conf" || {
     error "Could not source config file."
     exit 1
@@ -201,26 +156,15 @@ usage "$@" || exit 1
 
 
 # obtain and deploy pages certificate ------------
-# pages uses go webserver which can not be configered
-# to alias /.well-known at the moment
-# so it is needed to use "our" dummy webserver with correct
-
-# letsencrypt-auto standalone is not used because it can
-# not be configured to listen only on specific IP address
+# Pages' webserver can not be configured to alias /.well-known to use webroot
+# method so it is needed to stop pages webserver and run certbot in standalone
+# mode
 
 pages_service stop || exit 3
 
-start_dummy_webserver || exit 3
-
-sleep 2
-check_dummy_webserver || exit 3
-
 obtain_pages_cert || {
-    stop_dummy_webserver || exit 3
     pages_service start || exit 3
     exit 2
 }
-
-stop_dummy_webserver || exit 3
 
 pages_service start || exit 3
