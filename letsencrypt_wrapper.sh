@@ -37,6 +37,7 @@ EXAMPLES
 
 # default parameters -----------------------------
 VERBOSE='false'
+DAYS='30'
 
 # gitlab services controller
 gitlab_sv="/opt/gitlab/embedded/bin/sv"
@@ -106,6 +107,24 @@ usage() {
 }
 
 
+check_cert() {
+    local path="$1"
+
+    # check the need to renew if the cert is present an force mode is off
+    if ! [ -f "$path" -a -r "$path" ]; then
+        info "Certificate does not exist. New cert will be deployed."
+
+    elif ! openssl x509 -checkend $(( DAYS*24*60*60 )) -in "$path" &> /dev/null; then
+        info "Certificate will expire in $DAYS, certificate will be renewed."
+
+    else
+        info "Certificate will be valid for next $DAYS days, exiting."
+        exit 0
+
+    fi
+}
+
+
 # Needs $1: start/stop
 pages_service() {
     local action="$1"
@@ -162,6 +181,8 @@ source "$SCRIPTDIR/letsencrypt_wrapper.conf" || {
 
 usage "$@" || exit 1
 
+# check cert expire dates
+check_cert "/etc/letsencrypt/live/${pages_domains[0]}/cert.pem"
 
 # obtain and deploy pages certificate ------------
 # Pages' webserver can not be configured to alias /.well-known to use webroot
