@@ -24,8 +24,13 @@ OPTIONS
 
     -q      Quiet mode, suitable for cron (overrides '-v')
     -v      Verbose mode, useful for testing (overrides '-q')
+    -t      Use staging Let's Encrypt URL; will issue not-trusted
+            certificate, but useful for testing
 
 EXAMPLES
+    Issue testing certificate in terminal
+        $SCRIPTNAME -tv
+
     Run this script as a cron job:
         $SCRIPTNAME -q"
 
@@ -66,7 +71,7 @@ error() {
 
 # script functions -------------------------------
 usage() {
-    while getopts ':hqv' OPT; do
+    while getopts ':hqtv' OPT; do
         case "$OPT" in
             h)
                 echo "$USAGE"
@@ -76,6 +81,10 @@ usage() {
             q)
                 letsencrypt_extra_args+=("--quiet")
                 VERBOSE='false'
+                ;;
+
+            t)
+                letsencrypt_extra_args+=("--staging")
                 ;;
 
             v)

@@ -13,5 +13,3 @@ pages_domains=(
 
 # IP address where Pages listens
 pages_bind_ip="2.3.4.5"
-
-#letsencrypt_extra_args="--staging"
