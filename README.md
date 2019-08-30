@@ -28,5 +28,5 @@ gitlab_pages['cert_key'] = "/etc/letsencrypt/live/pages.example.cz/privkey.pem"
 A suitable cron job for renewing certificate is
 
 ```cron
-0 5 * * * root /opt/letsencrypt-gitlab/letsencrypt_wrapper.sh warn
+0 5 * * * root /opt/letsencrypt-gitlab/letsencrypt_wrapper.sh -q
 ```
