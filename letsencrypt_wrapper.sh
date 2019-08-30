@@ -13,24 +13,25 @@ SCRIPTDIR=${0%/*}
 
 USAGE="USAGE
     $SCRIPTNAME -h
-    $SCRIPTNAME [log_level]
+    $SCRIPTNAME [-qv]
 
     This script will obtain and deploy certificates for Gitlab Pages
     with domain names specified in configuration file
     '$SCRIPTDIR/letsencrypt_wrapper.conf'
 
-        log_level   info|warn|err
+OPTIONS
+    -h      Prints this message and exits
 
-                    Default is 'info' which can be overriden by variable
-                    'log_level' in config or as a parameter on commandline.
+    -q      Quiet mode, suitable for cron (overrides '-v')
+    -v      Verbose mode, useful for testing (overrides '-q')
 
-                    Running
-                        \`$SCRIPTNAME warn\`
-                    is suitable as a cron job."
+EXAMPLES
+    Run this script as a cron job:
+        $SCRIPTNAME -q"
 
 
 # default parameters -----------------------------
-log_level="info"
+VERBOSE='false'
 
 # gitlab services controller
 gitlab_sv="/opt/gitlab/embedded/bin/sv"
@@ -46,31 +47,39 @@ message() {
     echo "$SCRIPTNAME[$1]: $2" >&2
 }
 
-# for log_level >= info = 2
+
 info() {
-    [ "$log_level_i" -ge "2" ] && \
-      message "info" "$*"
+    if [ "$VERBOSE" == 'true' ]; then
+        message "info" "$*"
+    fi
 }
 
-# for log_level >= warn = 1
+
 warning() {
-    [ "$log_level_i" -ge "1" ] && \
-      message "warn" "$*"
+    message "warn" "$*"
 }
 
-# for log_level >= err = 0 (everytime)
 error() {
-    #[ "$log_level_i" -ge "0" ] && \
-      message "err" "$*"
+    message "err" "$*"
 }
+
 
 # script functions -------------------------------
 usage() {
-    while getopts ':h' OPT; do
+    while getopts ':hqv' OPT; do
         case "$OPT" in
             h)
                 echo "$USAGE"
                 exit 0
+                ;;
+
+            q)
+                letsencrypt_extra_args+=("--quiet")
+                VERBOSE='false'
+                ;;
+
+            v)
+                VERBOSE='true'
                 ;;
 
             \?)
@@ -81,30 +90,10 @@ usage() {
     done
     shift $(( OPTIND-1 ))
 
-    [ $# -le 1 ] || {
+    [ $# -eq 0 ] || {
         echo "$USAGE" >&2
         exit 1
     }
-
-    # log_level handling
-    log_level="${1:$log_level}"
-    case "$log_level" in
-        "info")
-            log_level_i=2
-            ;;
-        "warn")
-            log_level_i=1
-            letsencrypt_extra_args+=("--quiet")
-            ;;
-        "err")
-            log_level_i=0
-            letsencrypt_extra_args+=("--quiet")
-            ;;
-        *)
-            error "log_level can be set only to 'err','warn' or 'info'"
-            exit 1
-            ;;
-    esac
 }
 
 
