@@ -4,16 +4,11 @@
 
 # email for registration
 email="you@email.cz"
-# bash array of main Gitlab domain names
-gitlab_domains=(
-    "git.example.cz"
-)
 
 # bash array of Pages domain names
 pages_domains=(
     "pages.example.cz"
     "you.pages.example.cz"
-    "docs.you.cz"
 )
 
 # IP address where Pages listens

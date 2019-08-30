@@ -14,9 +14,9 @@ SCRIPTDIR=${0%/*}
 USAGE="USAGE
     $SCRIPTNAME [log_level]
 
-    This script will obtain anddeploy certificates for Gitlab
-    and Gitlab Pages with domain names specified in configuration
-    file '$SCRIPTDIR/letsencrypt_wrapper.conf'
+    This script will obtain and deploy certificates for Gitlab Pages
+    with domain names specified in configuration file
+    '$SCRIPTDIR/letsencrypt_wrapper.conf'
 
         log_level   info|warn|err
 
@@ -99,13 +99,6 @@ case "$log_level" in
 esac
 }
 
-restart_nginx() {
-    info "Restarting nginx" >&2
-    "$gitlab_sv" restart nginx > /dev/null || {
-        error "Failed to restart nginx"
-        return 1
-    }
-}
 
 # Needs $1: start/stop
 pages_service() {
@@ -180,14 +173,6 @@ obtain_cert() {
     )
 }
 
-obtain_gitlab_cert() {
-    # obtain certificate for gitlab – via webroot method
-    info "Obtaining Gitlab certificate" >&2
-    obtain_cert "${gitlab_domains[@]}" || {
-        error "Failed to obtain certificate for Gitlab domains" >&2
-        return 1
-    }
-}
 
 obtain_pages_cert() {
     # obtain certificate for pages – via webroot method
@@ -213,14 +198,6 @@ source "$SCRIPTDIR/letsencrypt_wrapper.conf" || {
 }
 
 usage "$@" || exit 1
-
-
-# obtain and deploy gitlab certificate -----------
-# this is handled with nginx custom configuration
-# by aliasing the /.well-known location
-obtain_gitlab_cert || exit 2
-
-restart_nginx || exit 3
 
 
 # obtain and deploy pages certificate ------------
