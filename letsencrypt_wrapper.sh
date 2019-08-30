@@ -12,6 +12,7 @@ SCRIPTNAME=${0##*/}
 SCRIPTDIR=${0%/*}
 
 USAGE="USAGE
+    $SCRIPTNAME -h
     $SCRIPTNAME [log_level]
 
     This script will obtain and deploy certificates for Gitlab Pages
@@ -26,6 +27,7 @@ USAGE="USAGE
                     Running
                         \`$SCRIPTNAME warn\`
                     is suitable as a cron job."
+
 
 # default parameters -----------------------------
 log_level="info"
@@ -64,20 +66,28 @@ error() {
 
 # script functions -------------------------------
 usage() {
+    while getopts ':h' OPT; do
+        case "$OPT" in
+            h)
+                echo "$USAGE"
+                exit 0
+                ;;
+
+            \?)
+                error "Illegal option '-$OPTARG'"
+                exit 1
+                ;;
+        esac
+    done
+    shift $(( OPTIND-1 ))
+
     [ $# -le 1 ] || {
         echo "$USAGE" >&2
         exit 1
     }
 
-    if [ $# -ge 1 ]; then
-        [ "$1" == "-h" -o "$1" == "--help" ] && {
-            echo "$USAGE"
-            exit 0
-        }
-        log_level="$1"
-    fi
-
     # log_level handling
+    log_level="${1:$log_level}"
     case "$log_level" in
         "info")
             log_level_i=2
