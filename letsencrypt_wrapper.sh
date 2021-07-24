@@ -47,7 +47,7 @@ CERT_NAME='gl-pages'
 
 # gitlab services controller
 gitlab_sv="/opt/gitlab/embedded/bin/sv"
-certbot="/opt/certbot/certbot-auto"
+certbot="/usr/local/bin/certbot"
 # extra args for certbot-auto
 # there needs to be at least something to use array expansion together with nounset
 certbot_extra_args=('--non-interactive')
